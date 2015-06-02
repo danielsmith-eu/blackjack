@@ -1,0 +1,27 @@
+{
+  "name": "blackjack-tools",
+  "version": "1.0.0",
+  "description": "Blackjack tools",
+  "main": "sim.js",
+  "dependencies": {
+    "knuth-shuffle": "^1.0.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Daniel Alexander Smith <daniel@danielsmith.eu> (https://danielsmith.eu/)",
+  "license": "None",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/danielsmith-eu/blackjack.git"
+  },
+  "keywords": [
+    "blackjack",
+    "gaming"
+  ],
+  "bugs": {
+    "url": "https://github.com/danielsmith-eu/blackjack/issues"
+  },
+  "homepage": "https://github.com/danielsmith-eu/blackjack"
+}
