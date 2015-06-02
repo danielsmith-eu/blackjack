@@ -21,10 +21,10 @@ var Trick = function (dealer, cards) {
             }
         }
         while (aces > 0) {
-            if (sum + 1 >= stickAt) {
-                sum = sum + 1;
-            } else {
+            if (sum + 11 <= 21) {
                 sum = sum + 11;
+            } else {
+                sum = sum + 1;
             }
             --aces;
         }
