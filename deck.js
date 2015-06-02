@@ -2,10 +2,10 @@
 var shuffle = require('knuth-shuffle').knuthShuffle;
 
 var suits = {
-    H: "HEARTS",
-    C: "CLUBS",
-    D: "DIAMONDS",
-    S: "SPADES",
+    '♥️ ': "HEARTS",
+    '♣️ ': "CLUBS",
+    '♦️ ': "DIAMONDS",
+    '♠️ ': "SPADES",
 };
 
 var values = {
