@@ -6,7 +6,6 @@ Some JS classes to work with the popular card game Blackjack.
 
 `deck.js` contains the class of the card deck.
 
-
 ## Example Output
 
     Processing player 1: (2♥️ ,2♦️  [4])
@@ -18,6 +17,11 @@ Some JS classes to work with the popular card game Blackjack.
     Player 1, trick 1 loses.
     Player 2, trick 1, wins.
 
+## Installation
+
+Run `npm install` to install the dependencies.
+
+Run `node sim` to run the simulation.
 
 ## Issues
 
