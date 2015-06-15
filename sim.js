@@ -1,172 +1,58 @@
 'use strict';
-var Deck = require('./deck');
+var blackjack = require('./blackjack');
+var strategy = require('./strategy');
 
+// environment setup
+var printEmoji = true;
+
+// simulator setup
+var playerStrategy = strategy.BasicStrategy({
+    standAt: 17, // hits on soft 16   
+    printEmoji: printEmoji,
+});
 var playerCount = 2;
-var stickAt = 17;
+var cardDeck = new blackjack.Deck({
+    shuffled: true,   
+});
+var dealer = new blackjack.Dealer(cardDeck, {
+    printEmoji: printEmoji,   
+});
+var players = new Array(playerCount);
 
-var cardDeck = new Deck();
-cardDeck.shuffle();
-
-var Trick = function (dealer, cards) {
-    var cards = cards || [];
-    var value = function () {
-        var sum = 0;
-        var aces = 0;
-        for (var i = 0; i < cards.length; ++i) {
-            var value = cards[i].value;
-            if (value !== "ACE") {
-                sum += value;
-            } else {
-                ++aces;
-            }
-        }
-        while (aces > 0) {
-            if (sum + 11 <= 21) {
-                sum = sum + 11;
-            } else {
-                sum = sum + 1;
-            }
-            --aces;
-        }
-        return sum;
-    };
-    var states = {
-        BUST: 0,
-        STICK: 1,
-        TWIST: 2,
-    };
-    var state = function () {
-        var sum = value();
-        if (sum > 21) {
-            return states.BUST;
-        } else if (sum >= stickAt && sum <= 21) {
-            return states.STICK;
-        } else {
-            return states.TWIST;
-        }
-    };
-    var stateAsTxt = function () {
-        var stateVal = state();
-        for (var i = 0; i < Object.keys(states).length; ++i) {
-            var val = states[i];
-            if (val === stateVal) {
-                return i;
-            }
-        }
-        return "UNKNOWN";
-    };
-    var result;
-    return {
-        cards: cards,
-        addCard: function (card) {
-            cards.push(card);
-        },
-        states: states,
-        value: value,
-        stateAsTxt: stateAsTxt,
-        state: state,
-        setResult: function (newResult) {
-            result = newResult;
-        },
-        getResult: function () { return result; },
-        toString: function () {
-            var out = "";
-            for (var j = 0; j < cards.length; ++j) {
-                if (j !== 0) {
-                    out += ",";
-                }
-                out += cards[j].name;
-            }
-            out += " [" + value() + "]";
-            return out;
-        },
-        copy: function () { return new Trick(dealer, cards); },
-    };
-};
-
-// single player's hand
-var Hand = function (dealer, tricks) {
-    var tricks = tricks || [ new Trick(dealer) ]; // default is a single empty trick
-    var dealCard = function () {
-        for (var j = 0; j < tricks.length; ++j) {
-            var card = cardDeck.deal();
-            tricks[j].addCard(card);
-        }
-    };
-    return {
-        toString: function () {
-            var out = "";
-            for (var i = 0; i < tricks.length; ++i) {
-                if (out.length > 0) {
-                    out += " ";
-                }
-                out += "(" + tricks[i] + ")";
-            }
-            return out;
-        },
-        dealCard: dealCard,
-        tricks: tricks,
-        process: function () {
-            var changes = true;
-            while (changes) {
-                changes = false;
-                for (var i = 0; i < tricks.length; ++i) {
-                    var trick = tricks[i];
-                    if (trick.state() === trick.states.TWIST) {
-                        dealCard();
-                        changes = true;
-                    }
-                }
-            }
-            var results = [];
-            for (var i = 0; i < tricks.length; ++i) {
-                var trick = tricks[i];
-                trick.setResult("Trick " + i + ", Value: " + trick.value() + " (" + trick.stateAsTxt() + ")");
-            }
-        },
-        copy: function () { return new Hand(dealer, tricks); },
-    };
-};
-
-// deal cards and make hands from them
-var dealHand = function (dealer) {
-    var hand = new Hand(dealer);
-    hand.dealCard();
-    hand.dealCard();
-    return hand;
-};
-
-// ===
-
-// players play
-var playersHands = [];
-for (var i = 0; i < playerCount; ++i) {
-    var hand = dealHand();
-    playersHands.push(hand);
-    console.log("Processing player " + (i+1) + ": " + hand);
-    hand.process();
-    console.log("  now is: " + hand);
+// round 1
+for (var i = 0; i < players.length; ++i) {
+    players[i] = new blackjack.Player(playerStrategy, dealer);
+    players[i].dealCard();
+    console.log("Round 1, Player " + (i+1) + ": " + players[i].hand);
 }
+dealer.dealCard();
+console.log("Round 1, Dealer: " + dealer.hand);
 
-// dealer plays
-var dealer = dealHand(true);
-console.log("Processing dealer: " + dealer);
+// round 2
+for (var i = 0; i < players.length; ++i) {
+    players[i].dealCard();
+    console.log("Round 2, Player " + (i+1) + ": " + players[i].hand);
+    players[i].process();
+    console.log("Round 2, Player " + (i+1) + " (after strategy): " + players[i].hand);
+}
+dealer.dealCard();
+console.log("Round 2, Dealer: " + dealer.hand);
 dealer.process();
-console.log("  now is: " + dealer);
+console.log("Round 2, Dealer (after dealer strategy): " + dealer.hand);
 
-// compare players hand(s) to dealer
-for (var i = 0; i < playersHands.length; ++i) {
-    var playerHand = playersHands[i];
+// compare players trick(s) to dealer
+for (var i = 0; i < players.length; ++i) {
+    var player = players[i];
 
-    for (var j = 0; j < playerHand.tricks.length; ++j) {
-        var trick = playerHand.tricks[j];
+    for (var j = 0; j < player.tricks.length; ++j) {
+        var trick = player.tricks[j];
 
         if (dealer.tricks[0].state() === dealer.tricks[0].states.BUST && trick.state() !== trick.states.BUST) {
             console.log("Player " + (i+1) + ", trick " + (j+1) + ", wins.");
         } else if (dealer.tricks[0].state() !== dealer.tricks[0].states.BUST && trick.state() !== trick.states.BUST) {
-            if (dealer.tricks[0].value() === trick.value()) {
+            if (dealer.tricks[0].value().sum === trick.value().sum) {
                 console.log("Player " + (i+1) + ", trick " + (j+1) + " pushes.");
-            } else if (dealer.tricks[0].value() > trick.value()) {
+            } else if (dealer.tricks[0].value().sum > trick.value().sum) {
                 console.log("Player " + (i+1) + ", trick " + (j+1) + " loses.");
             } else {
                 console.log("Player " + (i+1) + ", trick " + (j+1) + " wins.");

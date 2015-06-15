@@ -29,6 +29,3 @@ Does not implement doubling down.
 
 Does not implement insurance.
 
-Strategy is worse than basic strategy.
-
-Dealing order is wrong.
