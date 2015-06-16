@@ -85,6 +85,12 @@ At the end of the simulation, a summary of the results are shown:
 
     Average Payout: 1.4333333333333336
 
+## Installation
+
+Run `npm install` to install the dependencies.
+
+Run `node sim` to run the simulation.
+
 ## Issues
 
 Does not implement splitting (although there is skeleton support, in that multiple tricks per hand has been coded in).
