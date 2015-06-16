@@ -2,6 +2,13 @@
 var knuthShuffle = require('knuth-shuffle').knuthShuffle;
 var strategy = require('./strategy');
 
+var log = {
+    DEAL: 1,
+    PLAYER: 2,
+    TRICK_RESULT: 3,
+    DEALER: 4,
+};
+
 var suits = [
     {emoji: '♥️', name: "HEARTS", shortName: "H"},
     {emoji: '♣️', name: "CLUBS", shortName: "C"},
@@ -45,19 +52,24 @@ var Deck = function (options) {
         return options[key] || defaults[key];
     };
 
-    var cards = new Array();
-    for (var i = 0; i < suits.length; ++i) {
-        var suit = suits[i];
-        for (var j = 0; j < Object.keys(values).length; ++j) {
-            var card = Object.keys(values)[j];
-            cards.push(new Card(suit, card));
-        };
+    var cards;
+    var newCards = function () {
+        cards = new Array();
+        for (var i = 0; i < suits.length; ++i) {
+            var suit = suits[i];
+            for (var j = 0; j < Object.keys(values).length; ++j) {
+                var card = Object.keys(values)[j];
+                cards.push(new Card(suit, card));
+            }
+        }
     }
 
     var shuffle = function () {
+        newCards();
         knuthShuffle(cards);
     };
 
+    newCards();
     if (getOption('shuffled')) {
         shuffle();
     };
@@ -107,6 +119,10 @@ var Hand = function (myStrategy, dealer, tricks) {
                     if (trick.state() === trick.states.HIT) {
                         dealCard();
                         changes = true;
+                    } else if (trick.state() === trick.states.DOUBLE) {
+                        dealCard();
+                        trick.doubleDown();
+                        changes = true;
                     }
                 }
             }
@@ -116,13 +132,34 @@ var Hand = function (myStrategy, dealer, tricks) {
 };
 
 var Player = function (myStrategy, dealer) {
-    var hand = new Hand(myStrategy, dealer);
+    var history = [];
+    var hand;
+    var newRound = function () {
+        hand = new Hand(myStrategy, dealer);
+    };
+    var process = function () {
+        hand.process();
+    };
+    var addResult = function (result) {
+        history.push(result);
+    };
+
+    newRound();
     return {
-        hand: hand,
-        tricks: hand.tricks,
-        process: hand.process,
+        newRound: newRound,
+        getHand: function () {
+            return hand;
+        },
+        getTricks: function () {
+            return hand.tricks;
+        },
+        process: process,
         strategy: myStrategy,
-        dealCard: hand.dealCard,
+        dealCard: function () {
+            return hand.dealCard();
+        },
+        addResult: addResult,
+        history: history,
     };
 };
 
@@ -145,12 +182,25 @@ var Dealer = function (cardDeck, options) {
     }
     var dealerStrategy = strategy.BasicStrategy(options);
     var getFirstCard = function () {
-        return dealer.hand.getFirstCard();
+        return dealer.getHand().getFirstCard();
     };
     var dealer = new Player(dealerStrategy, {deal: cardDeck.deal, getFirstCard: getFirstCard});
     dealer.deal = cardDeck.deal;
     dealer.getFirstCard = getFirstCard;
     return dealer;
+};
+
+var outcomes = {
+    WIN: 1,
+    LOSE: 2,
+    PUSH: 3,
+};
+var Result = function (outcome, bet, winnings) {
+    return {
+        outcome: outcome,
+        bet: bet,
+        winnings: winnings,
+    };
 };
 
 module.exports = {
@@ -159,4 +209,7 @@ module.exports = {
     Hand: Hand,
     Deck: Deck,
     Card: Card,
+    log: log,
+    Result: Result,
+    outcomes: outcomes,
 };

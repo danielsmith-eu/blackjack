@@ -1,65 +1,46 @@
 'use strict';
 var blackjack = require('./blackjack');
 var strategy = require('./strategy');
+var game = require('./game');
 
-// environment setup
-var printEmoji = true;
+// setup
+var gameOptions = {
+    printEmoji: true,
+    playerCount: 6,
+    rounds: 5,
+    //showLogs: [], // comment out this line to see full in-game logs
+};
 
-// simulator setup
-var playerStrategy = strategy.BasicStrategy({
-    standAt: 17, // hits on soft 16   
-    printEmoji: printEmoji,
-});
-var playerCount = 2;
-var cardDeck = new blackjack.Deck({
-    shuffled: true,   
-});
-var dealer = new blackjack.Dealer(cardDeck, {
-    printEmoji: printEmoji,   
-});
-var players = new Array(playerCount);
-
-// round 1
-for (var i = 0; i < players.length; ++i) {
-    players[i] = new blackjack.Player(playerStrategy, dealer);
-    players[i].dealCard();
-    console.log("Round 1, Player " + (i+1) + ": " + players[i].hand);
-}
-dealer.dealCard();
-console.log("Round 1, Dealer: " + dealer.hand);
-
-// round 2
-for (var i = 0; i < players.length; ++i) {
-    players[i].dealCard();
-    console.log("Round 2, Player " + (i+1) + ": " + players[i].hand);
-    players[i].process();
-    console.log("Round 2, Player " + (i+1) + " (after strategy): " + players[i].hand);
-}
-dealer.dealCard();
-console.log("Round 2, Dealer: " + dealer.hand);
-dealer.process();
-console.log("Round 2, Dealer (after dealer strategy): " + dealer.hand);
-
-// compare players trick(s) to dealer
+var aGame = new game.Game(gameOptions);
+var players = aGame.play();
+var payoutCumulative = 0;
 for (var i = 0; i < players.length; ++i) {
     var player = players[i];
-
-    for (var j = 0; j < player.tricks.length; ++j) {
-        var trick = player.tricks[j];
-
-        if (dealer.tricks[0].state() === dealer.tricks[0].states.BUST && trick.state() !== trick.states.BUST) {
-            console.log("Player " + (i+1) + ", trick " + (j+1) + ", wins.");
-        } else if (dealer.tricks[0].state() !== dealer.tricks[0].states.BUST && trick.state() !== trick.states.BUST) {
-            if (dealer.tricks[0].value().sum === trick.value().sum) {
-                console.log("Player " + (i+1) + ", trick " + (j+1) + " pushes.");
-            } else if (dealer.tricks[0].value().sum > trick.value().sum) {
-                console.log("Player " + (i+1) + ", trick " + (j+1) + " loses.");
-            } else {
-                console.log("Player " + (i+1) + ", trick " + (j+1) + " wins.");
-            }
+    var totalBet = 0;
+    var totalWinnings = 0;
+    var won = 0;
+    var lost = 0;
+    var pushed = 0;
+    for (var j = 0; j < player.history.length; ++j) {
+        var result = player.history[j];
+        totalBet += result.bet;
+        totalWinnings += result.winnings;
+        if (result.outcome === blackjack.outcomes.WIN) {
+            ++won;
+        } else if (result.outcome === blackjack.outcomes.LOSE) {
+            ++lost;
+        } else if (result.outcome === blackjack.outcomes.PUSH) {
+            ++pushed;
         } else {
-            console.log("Player " + (i+1) + ", trick " + (j+1) + " loses.");
+            throw "Unknown result: " + result.outcome;
         }
     }
+    var played = won + lost + pushed;
+    var payout = totalWinnings / totalBet;
+    payoutCumulative += payout;
+    console.log("Player " + (i+1) + ": ");
+    console.log("\tPlayed: " + played + ", Won: " + won + ", Pushed: " + pushed + ", Lost: " + lost);
+    console.log("\tBet: " + totalBet + ", Winnings: " + totalWinnings + ", Payout: " + payout);
 }
 
+console.log("\nAverage Payout: " + (payoutCumulative / players.length));

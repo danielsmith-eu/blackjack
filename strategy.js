@@ -74,6 +74,9 @@ module.exports = {
                 if (!sum.hard && sum.sum >= 20) {
                     return states.STAND;
                 }
+                if (!sum.hard && sum.sum <= 12) {
+                    return states.HIT; // TODO double check this
+                }
                 if (sum.sum <= 7) {
                     return states.HIT;
                 }
@@ -119,6 +122,10 @@ module.exports = {
                 }
                 return "UNKNOWN";
             };
+            var doubled = false;
+            var doubleDown = function () {
+                doubled = true;
+            };
             return {
                 cards: cards,
                 addCard: function (card) {
@@ -128,6 +135,8 @@ module.exports = {
                 value: value,
                 stateAsTxt: stateAsTxt,
                 state: state,
+                doubleDown: doubleDown,
+                doubled: doubled,
                 toString: function () {
                     var out = "";
                     for (var j = 0; j < cards.length; ++j) {
