@@ -1,6 +1,5 @@
 'use strict';
 var blackjack = require('./blackjack');
-var strategy = require('./strategy');
 var game = require('./game');
 
 // setup

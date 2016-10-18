@@ -1,5 +1,6 @@
 'use strict';
 var blackjack = require('./blackjack');
+var bjstrategy = require('blackjack-strategy');
 
 module.exports = {
     BasicStrategy: function (options) {
@@ -68,49 +69,24 @@ module.exports = {
                     }
                 }
 
-                if (sum.hard && sum.sum >= 17) {
+                // Look up basic strategy
+                // Based on 1-deck, dealer stands on soft 17, no split, no surrender, double any cards
+                var options = {numberOfDecks: 1, hitSoft17: false, maxSplitHands: 1, surrender: "none", doubleRange: [0, 21], strategyComplexity: "advanced"};
+                var playerCards = cards.map(card => (card.value == "ACE" ? 1 : card.value));
+                var dealerCardValue = (dealerCard.value == "ACE") ? 1 : dealerCard.value;
+                var suggest = bjstrategy.GetRecommendedPlayerAction(playerCards, dealerCardValue, 1, true, options);
+
+                if (suggest == "stand") {
                     return states.STAND;
                 }
-                if (!sum.hard && sum.sum >= 20) {
-                    return states.STAND;
-                }
-                if (!sum.hard && sum.sum <= 12) {
-                    return states.HIT; // TODO double check this
-                }
-                if (sum.sum <= 7) {
+                if (suggest == "hit") {
                     return states.HIT;
                 }
-
-                // encoding of basic strategy
-                var matrix = {
-                    hard: {
-                        8: [states.HIT, states.HIT, states.HIT, states.DOUBLE, states.DOUBLE, states.HIT, states.HIT, states.HIT, states.HIT, states.HIT],
-                        9: [states.DOUBLE, states.DOUBLE, states.DOUBLE, states.DOUBLE, states.DOUBLE, states.HIT, states.HIT, states.HIT, states.HIT, states.HIT],
-                        10: [states.DOUBLE, states.DOUBLE, states.DOUBLE, states.DOUBLE, states.DOUBLE, states.DOUBLE, states.DOUBLE, states.DOUBLE, states.HIT, states.HIT],
-                        11: [states.DOUBLE, states.DOUBLE, states.DOUBLE, states.DOUBLE, states.DOUBLE, states.DOUBLE, states.DOUBLE, states.DOUBLE, states.DOUBLE, states.DOUBLE],
-                        12: [states.HIT, states.HIT, states.STAND, states.STAND, states.STAND, states.HIT, states.HIT, states.HIT, states.HIT, states.HIT],
-                        13: [states.STAND, states.STAND, states.STAND, states.STAND, states.STAND, states.HIT, states.HIT, states.HIT, states.HIT, states.HIT],
-                        14: [states.STAND, states.STAND, states.STAND, states.STAND, states.STAND, states.HIT, states.HIT, states.HIT, states.HIT, states.HIT],
-                        15: [states.STAND, states.STAND, states.STAND, states.STAND, states.STAND, states.HIT, states.HIT, states.HIT, states.HIT, states.HIT],
-                        16: [states.STAND, states.STAND, states.STAND, states.STAND, states.STAND, states.HIT, states.HIT, states.HIT, states.HIT, states.HIT],
-                    },
-                    soft: {
-                        13: [states.HIT, states.HIT, states.DOUBLE, states.DOUBLE, states.DOUBLE, states.HIT, states.HIT, states.HIT, states.HIT, states.HIT],
-                        14: [states.HIT, states.HIT, states.DOUBLE, states.DOUBLE, states.DOUBLE, states.HIT, states.HIT, states.HIT, states.HIT, states.HIT],
-                        15: [states.HIT, states.HIT, states.DOUBLE, states.DOUBLE, states.DOUBLE, states.HIT, states.HIT, states.HIT, states.HIT, states.HIT],
-                        16: [states.HIT, states.HIT, states.DOUBLE, states.DOUBLE, states.DOUBLE, states.HIT, states.HIT, states.HIT, states.HIT, states.HIT],
-                        17: [states.DOUBLE, states.DOUBLE, states.DOUBLE, states.DOUBLE, states.DOUBLE, states.HIT, states.HIT, states.HIT, states.HIT, states.HIT],
-                        18: [states.STAND, states.DOUBLE, states.DOUBLE, states.DOUBLE, states.DOUBLE, states.STAND, states.STAND, states.HIT, states.HIT, states.STAND],
-                        19: [states.STAND, states.STAND, states.STAND, states.STAND, states.DOUBLE, states.STAND, states.STAND, states.STAND, states.STAND, states.STAND],
-                    },
-                };
-               
-                var dealerIndex = dealerCard.value;
-                if (value === "ACE") {
-                    dealerIndex = 11;
+                if (suggest == "double") {
+                    return states.DOUBLE;
                 }
-                dealerIndex -= 2;
-                return matrix[sum.hard ? "hard" : "soft"][sum.sum][dealerIndex];
+
+                console.log("GOT UNEXPECTED " + suggest);
             };
             var stateAsTxt = function () {
                 var stateVal = state();

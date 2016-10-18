@@ -4,7 +4,8 @@
   "description": "Blackjack tools",
   "main": "sim.js",
   "dependencies": {
-    "knuth-shuffle": "^1.0.1"
+    "knuth-shuffle": "^1.0.1",
+    "blackjack-strategy": "^1.1.2"
   },
   "devDependencies": {},
   "scripts": {
